@@ -77,6 +77,44 @@ class Crow {
   }
 }
 
+let explosions = [];
+class Explosion {
+  constructor(x, y, size) {
+    this.image = new Image();
+    this.image.src = 'boom.png';
+    this.spriteWidth = 200;
+    this.spriteHeight = 179;
+    this.size = size;
+    this.x = x;
+    this.y = y;
+    this.frame = 0;
+    this.sound = new Audio();
+    this.sound.src = 'boom.wav';
+    this.timeSinceLastFrame = 0;
+    this.frameInterval = 200;
+    this.markedForDeletion = false;
+  }
+
+  update(deltaTime) {
+    if (this.frame === 0) {
+      this.sound.play();
+    }
+    this.timeSinceLastFrame += deltaTime;
+    if (this.timeSinceLastFrame > this.frameInterval) {
+      this.frame++;
+      this.timeSinceLastFrame = 0;
+      if (this.frame > 5) {
+        this.markedForDeletion = true;
+        
+      }
+    }
+  }
+
+  draw() {
+    ctx.drawImage(this.image, this.spriteWidth * this.frame, 0, this.spriteWidth, this.spriteHeight, this.x, this.y - this.size/4, this.size, this.size);
+  }
+}    
+
 function drawScore() {
   ctx.fillStyle = 'black';
   ctx.fillText('Score: ' + score, 40, 40);
@@ -90,8 +128,10 @@ window.addEventListener('click', function(e) {
   const pc = detectPixelColor.data;
   crows.forEach(obj => {
     if (obj.randomColor[0] === pc[0] && obj.randomColor[1] === pc[1] && obj.randomColor[2] === pc[2]) {
+      //collision effettuata
       obj.markedForDeletion = true;
       score++;
+      explosions.push(new Explosion(obj.x, obj.y, obj.width));
     }
   })
 })
@@ -111,11 +151,12 @@ function animate(timestamp) {
   }
   drawScore();
   //array literal
-  [...crows].forEach(obj => {
+  [...crows, ...explosions].forEach(obj => {
     obj.update( deltaTime);
     obj.draw();
   })
   crows = crows.filter(obj => !obj.markedForDeletion);
+  explosions = explosions.filter(obj => !obj.markedForDeletion);
   requestAnimationFrame(animate);
 }  
 //timestamp inizialmente è undefined e riporta un numero solo dopo il primo ciclo, rendendo di fatto timeToNextCrow NaN e deltaTime null. Per ovviare a tale problema, lo impostiamo a 0 come argomento
