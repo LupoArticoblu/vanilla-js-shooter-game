@@ -2,6 +2,10 @@ const canvas = document.getElementById('canvas1');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
+const canvasCollision = document.getElementById('canvasCollision');
+const ctxCollision = canvasCollision.getContext('2d');
+canvasCollision.width = window.innerWidth;
+canvasCollision.height = window.innerHeight;
 ctx.font = '40px Helvetica';
 
 let score = 0;
@@ -30,6 +34,8 @@ class Crow {
     this.maxFrame = 4;
     this.timeWing = 0;
     this.intervalTimeWing = Math.random() * 50 + 50;
+    this.randomColor = [Math.floor(Math.random() * 255), Math.floor(Math.random() * 255), Math.floor(Math.random() * 255)];
+    this.color = 'rgb(' + this.randomColor[0] + ',' + this.randomColor[1] + ',' + this.randomColor[2] + ')';
   }
 
   update(deltaTime) {
@@ -65,6 +71,8 @@ class Crow {
   }
   
   draw() {
+    ctxCollision.fillStyle = this.color; 
+    ctxCollision.fillRect(this.x, this.y, this.width, this.height);
     ctx.drawImage(this.image, this.frame * this.spriteWidth, 0, this.spriteWidth, this.spriteHeight, this.x, this.y, this.width, this.height);
   }
 }
@@ -77,12 +85,19 @@ function drawScore() {
 }
 
 window.addEventListener('click', function(e) {
-  const detectPixelColor = ctx.getImageData(e.x, e.y, 1, 1);
+  const detectPixelColor = ctxCollision.getImageData(e.x, e.y, 1, 1);
   console.log(detectPixelColor);
-  
+  const pc = detectPixelColor.data;
+  crows.forEach(obj => {
+    if (obj.randomColor[0] === pc[0] && obj.randomColor[1] === pc[1] && obj.randomColor[2] === pc[2]) {
+      obj.markedForDeletion = true;
+      score++;
+    }
+  })
 })
 
 function animate(timestamp) {
+  ctxCollision.clearRect(0, 0, canvasCollision.width, canvasCollision.height);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   let deltaTime = timestamp - lastTime;
   lastTime = timestamp;
@@ -91,6 +106,8 @@ function animate(timestamp) {
   if (timeToNextCrow > crowIntervall) {
     crows.push(new Crow());
     timeToNextCrow = 0;
+    //ordiniamo i crows per la loro larghezza, più saranno piccoli, più saranno posizionati in secondo piano e viceversa
+    crows.sort((a, b) => a.width - b.width);
   }
   drawScore();
   //array literal
