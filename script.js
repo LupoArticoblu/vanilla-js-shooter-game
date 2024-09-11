@@ -7,7 +7,7 @@ const ctxCollision = canvasCollision.getContext('2d');
 canvasCollision.width = window.innerWidth;
 canvasCollision.height = window.innerHeight;
 ctx.font = '40px Helvetica';
-
+let gameOver = false;
 let score = 0;
 let timeToNextCrow = 0;
 let crowIntervall = 500;
@@ -68,6 +68,8 @@ class Crow {
       //azzzeriamo il tempo delle ali
       this.timeWing = 0;
     }
+    //condizione dei corvi per il game over
+    if(this.x < 0 - this.width) gameOver = true;
   }
   
   draw() {
@@ -122,6 +124,18 @@ function drawScore() {
   ctx.fillText('Score: ' + score, 43, 43);
 }
 
+function drawGameOver(){
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'black';
+  ctx.fillText('GAME OVER punteggio:'+ score, canvas.width/2, canvas.height/2);
+  ctx.fillStyle = 'white';
+  ctx.fillText('GAME OVER punteggio:'+ score, canvas.width/2 + 2, canvas.height/2 + 2);
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+}
+
 window.addEventListener('click', function(e) {
   const detectPixelColor = ctxCollision.getImageData(e.x, e.y, 1, 1);
   console.log(detectPixelColor);
@@ -155,9 +169,11 @@ function animate(timestamp) {
     obj.update( deltaTime);
     obj.draw();
   })
+
   crows = crows.filter(obj => !obj.markedForDeletion);
   explosions = explosions.filter(obj => !obj.markedForDeletion);
-  requestAnimationFrame(animate);
+  if (!gameOver) requestAnimationFrame(animate);
+  else drawGameOver();
 }  
 //timestamp inizialmente è undefined e riporta un numero solo dopo il primo ciclo, rendendo di fatto timeToNextCrow NaN e deltaTime null. Per ovviare a tale problema, lo impostiamo a 0 come argomento
 animate(0);
