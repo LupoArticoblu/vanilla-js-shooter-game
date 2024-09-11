@@ -18,10 +18,12 @@ class Crow {
     this.y = Math.random() * (canvas.height - this.height);
     this.speedX = Math.random() * 5 + 3;
     this.speedY = Math.random() * 5 - 2;
+    this.markedForDeletion = false;
   }
 
   update() {
     this.x -= this.speedX;
+    if (this.x < 0 - this.width) this.markedForDeletion = true;
     this.y += this.speedY;
   }
   
@@ -42,6 +44,12 @@ function animate(timestamp) {
     crows.push(new Crow());
     timeToNextCrow = 0;
   }
+  //array literal
+  [...crows].forEach(obj => {
+    obj.update();
+    obj.draw();
+  })
+  crows = crows.filter(obj => !obj.markedForDeletion);
   requestAnimationFrame(animate);
 }  
 //timestamp inizialmente è undefined e riporta un numero solo dopo il primo ciclo, rendendo di fatto timeToNextCrow NaN e deltaTime null. Per ovviare a tale problema, lo impostiamo a 0 come argomento
