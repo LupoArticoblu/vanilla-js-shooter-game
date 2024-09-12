@@ -6,6 +6,7 @@ const canvasCollision = document.getElementById('canvasCollision');
 const ctxCollision = canvasCollision.getContext('2d');
 canvasCollision.width = window.innerWidth;
 canvasCollision.height = window.innerHeight;
+
 ctx.font = '40px Helvetica';
 let gameOver = false;
 let score = 0;
@@ -13,9 +14,11 @@ let timeToNextCrow = 0;
 let crowIntervall = 500;
 let lastTime = 0;
 
-//creiamo un array vuoto MA che sia di variabile let perchè ci sono dei valori che possono cambiare
 let crows = [];
-const arrival =[];
+
+let crowSprites = document.querySelectorAll('.crow');
+let arrival = [];
+
 class Crow {
   constructor() {
     this.spriteWidth = 271;
@@ -39,46 +42,34 @@ class Crow {
   }
 
   update(deltaTime) {
-    //decrementiamo la x per farla muovere verso sinistra
     this.x -= this.speedX;
-    //incrementiamo la y per far oscillare gli oggetti
     this.y += this.speedY;
-    //se gli oggetti finiscono nei punti estremi di canvas.y li facciamo rimbalzare
     if (this.y > canvas.height - this.height || this.y < 0) {
       this.speedY = -this.speedY;
     }
-    //se la x  diventa minore di 0 - width  (cioè se esce fuori dal canvas)
     if (this.x < 0 - this.width) {
-      //la segnamo per cancellazione
       this.markedForDeletion = true;
     }
-    //aumentiamo il tempo delle ali
     this.timeWing += deltaTime;
-    //se il tempo delle ali  supera l'intervallo di tempo delle ali
     if (this.timeWing > this.intervalTimeWing) {
-      //se il frame  supera il numero massimo di frame
       if (this.frame > this.maxFrame) {
-        //riportiamo il frame a 0
         this.frame = 0;
-      }
-      //altrimenti incrementiamo il frame
-      else {
+      } else {
         this.frame++;
       }
-      //azzzeriamo il tempo delle ali
       this.timeWing = 0;
     }
-    //condizione dei corvi per il game over
-    if(this.x < 0 - this.width) {
+    if (this.x < 0 - this.width) {
       arrival.push(this);
-      if(arrival.length === 3) {
+      updateCrowSprites();
+      if (arrival.length === 3) {
         gameOver = true;
       }
     }
   }
-  
+
   draw() {
-    ctxCollision.fillStyle = this.color; 
+    ctxCollision.fillStyle = this.color;
     ctxCollision.fillRect(this.x, this.y, this.width, this.height);
     ctx.drawImage(this.image, this.frame * this.spriteWidth, 0, this.spriteWidth, this.spriteHeight, this.x, this.y, this.width, this.height);
   }
@@ -112,15 +103,14 @@ class Explosion {
       this.timeSinceLastFrame = 0;
       if (this.frame > 5) {
         this.markedForDeletion = true;
-        
       }
     }
   }
 
   draw() {
-    ctx.drawImage(this.image, this.spriteWidth * this.frame, 0, this.spriteWidth, this.spriteHeight, this.x, this.y - this.size/4, this.size, this.size);
+    ctx.drawImage(this.image, this.spriteWidth * this.frame, 0, this.spriteWidth, this.spriteHeight, this.x, this.y - this.size / 4, this.size, this.size);
   }
-}    
+}
 
 function drawScore() {
   ctx.fillStyle = 'black';
@@ -129,25 +119,33 @@ function drawScore() {
   ctx.fillText('Score: ' + score, 43, 43);
 }
 
-function drawGameOver(){
+function drawGameOver() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = 'black';
-  ctx.fillText('GAME OVER punteggio:'+ score, canvas.width/2, canvas.height/2);
+  ctx.fillText('GAME OVER punteggio:' + score, canvas.width / 2, canvas.height / 2);
   ctx.fillStyle = 'white';
-  ctx.fillText('GAME OVER punteggio:'+ score, canvas.width/2 + 2, canvas.height/2 + 2);
+  ctx.fillText('GAME OVER punteggio:' + score, canvas.width / 2 + 2, canvas.height / 2 + 2);
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
 }
 
+function updateCrowSprites() {
+
+  // Aggiungi la classe "selected" ai div corrispondenti all'array arrival
+  for (let i = 0; i < arrival.length; i++) {
+    if(crowSprites[i]){
+      crowSprites[i].classList.add('selected');
+    }
+  }
+}
+
 window.addEventListener('click', function(e) {
   const detectPixelColor = ctxCollision.getImageData(e.x, e.y, 1, 1);
-  console.log(detectPixelColor);
   const pc = detectPixelColor.data;
   crows.forEach(obj => {
     if (obj.randomColor[0] === pc[0] && obj.randomColor[1] === pc[1] && obj.randomColor[2] === pc[2]) {
-      //collision effettuata
       obj.markedForDeletion = true;
       score++;
       explosions.push(new Explosion(obj.x, obj.y, obj.width));
@@ -161,24 +159,27 @@ function animate(timestamp) {
   let deltaTime = timestamp - lastTime;
   lastTime = timestamp;
   timeToNextCrow += deltaTime;
-  
+
   if (timeToNextCrow > crowIntervall) {
     crows.push(new Crow());
     timeToNextCrow = 0;
-    //ordiniamo i crows per la loro larghezza, più saranno piccoli, più saranno posizionati in secondo piano e viceversa
     crows.sort((a, b) => a.width - b.width);
   }
+
   drawScore();
-  //array literal
+
   [...crows, ...explosions].forEach(obj => {
-    obj.update( deltaTime);
+    obj.update(deltaTime);
     obj.draw();
-  })
+  });
 
   crows = crows.filter(obj => !obj.markedForDeletion);
   explosions = explosions.filter(obj => !obj.markedForDeletion);
-  if (!gameOver) requestAnimationFrame(animate);
-  else drawGameOver();
-}  
-//timestamp inizialmente è undefined e riporta un numero solo dopo il primo ciclo, rendendo di fatto timeToNextCrow NaN e deltaTime null. Per ovviare a tale problema, lo impostiamo a 0 come argomento
+  requestAnimationFrame(animate);
+
+  if (gameOver) {
+    drawGameOver();
+  }
+}
+
 animate(0);
