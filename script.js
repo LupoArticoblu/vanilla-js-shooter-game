@@ -15,7 +15,7 @@ let lastTime = 0;
 
 //creiamo un array vuoto MA che sia di variabile let perchè ci sono dei valori che possono cambiare
 let crows = [];
-
+const arrival =[];
 class Crow {
   constructor() {
     this.spriteWidth = 271;
@@ -69,7 +69,12 @@ class Crow {
       this.timeWing = 0;
     }
     //condizione dei corvi per il game over
-    if(this.x < 0 - this.width) gameOver = true;
+    if(this.x < 0 - this.width) {
+      arrival.push(this);
+      if(arrival.length === 3) {
+        gameOver = true;
+      }
+    }
   }
   
   draw() {
